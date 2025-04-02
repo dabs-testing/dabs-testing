@@ -11,16 +11,18 @@ on:
       - main
 
 jobs:
-  install_and_test:
+  setup:
     runs-on: ubuntu-latest
     container:
       image: python:3.10
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Cache Python dependencies and Databricks CLI
       - name: Cache dependencies and CLI
+        id: cache
         uses: actions/cache@v3
         with:
           path: |
@@ -29,12 +31,21 @@ jobs:
           key: cli-cache-${{ runner.os }}
           restore-keys: cli-cache-${{ runner.os }}-
 
-      # Set up Databricks CLI if cache is not hit
       - name: Set up Databricks CLI
         uses: databricks/setup-cli@main
         if: steps.cache.outputs.cache-hit != 'true'
 
-      # Validate Databricks bundle
+  validate:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Databricks CLI
+        uses: databricks/setup-cli@main
+        if: steps.cache.outputs.cache-hit != 'true'
+
       - name: Validate Bundle
         run: databricks bundle validate || { echo "Bundle validation failed"; exit 1; }
         env:
@@ -42,28 +53,9 @@ jobs:
 
   deploy_to_development:
     runs-on: ubuntu-latest
-    needs: install_and_test
+    needs: validate
     if: github.ref == 'refs/heads/develop'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Cache Python dependencies and Databricks CLI
-      - name: Cache dependencies and CLI
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.local/bin
-            ~/.cache/pip
-          key: cli-cache-${{ runner.os }}
-          restore-keys: cli-cache-${{ runner.os }}-
-
-      # Set up Databricks CLI if cache is not hit
-      - name: Set up Databricks CLI
-        uses: databricks/setup-cli@main
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      # Deploy to development environment
       - name: Deploy to Development
         run: databricks bundle deploy --target dev --auto-approve
         env:
@@ -71,30 +63,9 @@ jobs:
 
   deploy_to_production:
     runs-on: ubuntu-latest
-    needs: install_and_test
+    needs: validate
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://example.com/production
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Cache Python dependencies and Databricks CLI
-      - name: Cache dependencies and CLI
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.local/bin
-            ~/.cache/pip
-          key: cli-cache-${{ runner.os }}
-          restore-keys: cli-cache-${{ runner.os }}-
-
-      # Set up Databricks CLI if cache is not hit
-      - name: Set up Databricks CLI
-        uses: databricks/setup-cli@main
-
-      # Deploy to production environment (manual trigger)
       - name: Deploy to Production (Manual Trigger)
         run: databricks bundle deploy --target prod --auto-approve
         env:
