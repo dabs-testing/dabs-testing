@@ -1,0 +1,33 @@
+# Databricks configuration file
+bundle:
+  name: hello-bundle
+
+include:
+  - "resources/*.yaml"
+
+variables:
+  test_var:
+    default: "hello world"
+
+targets:
+  dev:
+    mode: production
+    presets:
+      name_prefix: "[dev] "
+      tags:
+        environment: dev
+      pipelines_development: true
+    default: true
+    workspace:
+      host: https://dbc-99a4f21b-07a1.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+  prod:
+    mode: production
+    presets:
+      name_prefix: "[prod] "
+      tags:
+        environment: prod
+      pipelines_development: true
+    workspace:
+      host: https://dbc-99a4f21b-07a1.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

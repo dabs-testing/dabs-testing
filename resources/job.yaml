@@ -1,0 +1,32 @@
+# Development-specific parameters
+dev_parameters: &dev_parameters
+  - name: job_var
+    default: "we are in development"
+
+# Production-specific parameters
+prod_parameters: &prod_parameters
+  - name: job_var
+    default: "we are in production"
+
+resources:
+  jobs:
+    dummy_job:
+      name: "dummy_workflow"
+      tasks:
+        - task_key: dummy_task
+          notebook_task:
+            notebook_path: ../src/test.py
+            source: WORKSPACE
+
+targets:
+  dev:
+    resources:
+      jobs:
+        dummy_job:
+          parameters: *dev_parameters
+
+  prod:
+    resources:
+      jobs:
+        dummy_job:
+          parameters: *prod_parameters
