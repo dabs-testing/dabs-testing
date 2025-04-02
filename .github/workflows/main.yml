@@ -42,6 +42,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set up Databricks CLI
+        uses: databricks/setup-cli@main
+        if: steps.cache.outputs.cache-hit != 'true'
+
       - name: Validate Bundle
         run: databricks bundle validate || { echo "Bundle validation failed"; exit 1; }
         env:
@@ -52,12 +56,6 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/develop'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Databricks CLI
-        uses: databricks/setup-cli@main
-
       - name: Deploy to Development
         run: databricks bundle deploy --target dev --auto-approve
         env:
@@ -68,12 +66,6 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Databricks CLI
-        uses: databricks/setup-cli@main
-
       - name: Deploy to Production (Manual Trigger)
         run: databricks bundle deploy --target prod --auto-approve
         env:
